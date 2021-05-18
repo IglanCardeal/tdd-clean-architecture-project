@@ -17,11 +17,7 @@ class LoginRouter {
     const { body } = httpContext
     const { email, password } = body
 
-    if (!email) {
-      return { body: null, statusCode: 400 }
-    }
-
-    if (!password) {
+    if (!email || !password) {
       return { body: null, statusCode: 400 }
     }
 
@@ -60,7 +56,7 @@ describe('Login Router', () => {
     const httpContext = {
       body: {
         email: '',
-        password: ''
+        password: '12345'
       }
     }
     const httpResponse = sut.route(httpContext)
