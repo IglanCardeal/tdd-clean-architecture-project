@@ -1,3 +1,17 @@
+function badRequest (body: unknown) {
+  return {
+    body: body,
+    statusCode: 400
+  }
+}
+
+function serverError (body: unknown) {
+  return {
+    body: body,
+    statusCode: 500
+  }
+}
+
 interface IHttpContext {
   body: {
     email: string
@@ -15,13 +29,13 @@ class LoginRouter {
 
   route (httpContext: IHttpContext): IHttpResponse {
     if (!httpContext) {
-      return { body: null, statusCode: 500 }
+      return serverError(null)
     }
 
     const { email, password } = httpContext.body
 
     if (!email || !password) {
-      return { body: null, statusCode: 400 }
+      return badRequest(null)
     }
 
     return { body: {}, statusCode: 201 }
