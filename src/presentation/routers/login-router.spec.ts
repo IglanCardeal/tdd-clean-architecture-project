@@ -1,17 +1,3 @@
-function badRequest (body: unknown) {
-  return {
-    body: body,
-    statusCode: 400
-  }
-}
-
-function serverError (body: unknown) {
-  return {
-    body: body,
-    statusCode: 500
-  }
-}
-
 interface IHttpContext {
   body: {
     email: string
@@ -19,26 +5,69 @@ interface IHttpContext {
   }
 }
 
-interface IHttpResponse {
-  body: unknown
+interface ResponseData {
+  body: unknown | MissingParamError
   statusCode: number
+}
+
+class MissingParamError extends Error {
+  constructor (private paramName: string) {
+    super(`Missing param "${paramName}"`)
+    this.name = 'MissingParamError'
+  }
+}
+
+class ServerError extends Error {
+  constructor () {
+    super('Internal Server Error')
+    this.name = 'ServerError'
+  }
+}
+
+class HttpResponse {
+  constructor (private b?: string) {}
+
+  static badRequest (paramName: string): ResponseData {
+    return {
+      body: new MissingParamError(paramName),
+      statusCode: 400
+    }
+  }
+
+  static serverError (): ResponseData {
+    return {
+      body: new ServerError(),
+      statusCode: 500
+    }
+  }
+
+  static success (body: unknown): ResponseData {
+    return {
+      body: body,
+      statusCode: 201
+    }
+  }
 }
 
 class LoginRouter {
   constructor (private b?: string) {}
 
-  route (httpContext: IHttpContext): IHttpResponse {
+  route (httpContext: IHttpContext): ResponseData {
     if (!httpContext || !httpContext.body) {
-      return serverError(null)
+      return HttpResponse.serverError()
     }
 
     const { email, password } = httpContext.body
 
-    if (!email || !password) {
-      return badRequest(null)
+    if (!email) {
+      return HttpResponse.badRequest('email')
     }
 
-    return { body: {}, statusCode: 201 }
+    if (!password) {
+      return HttpResponse.badRequest('password')
+    }
+
+    return HttpResponse.success({})
   }
 }
 
@@ -74,6 +103,7 @@ describe('Login Router', () => {
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   it('should route method return status code 500 if no body was provided', () => {
@@ -82,14 +112,15 @@ describe('Login Router', () => {
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
-  it('should route method return a empty body if no httpContext was provided', () => {
+  it('should route method return a instance of ServerError if no httpContext was provided', () => {
     const sut = new LoginRouter()
     const httpContext = undefined
     const httpResponse = sut.route(httpContext)
 
-    expect(httpResponse.body).toBe(null)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   it('should login router return an httpResponse', () => {
@@ -116,6 +147,7 @@ describe('Login Router', () => {
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBeDefined()
+    expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
 
   it('should login router return an status code 400 if no password was provided', () => {
@@ -129,5 +161,6 @@ describe('Login Router', () => {
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBeDefined()
+    expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
 })
