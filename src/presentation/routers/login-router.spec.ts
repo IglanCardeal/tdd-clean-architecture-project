@@ -1,75 +1,4 @@
-interface IHttpContext {
-  body: {
-    email: string
-    password: string
-  }
-}
-
-interface ResponseData {
-  body: unknown | MissingParamError
-  statusCode: number
-}
-
-class MissingParamError extends Error {
-  constructor (private paramName: string) {
-    super(`Missing param "${paramName}"`)
-    this.name = 'MissingParamError'
-  }
-}
-
-class ServerError extends Error {
-  constructor () {
-    super('Internal Server Error')
-    this.name = 'ServerError'
-  }
-}
-
-class HttpResponse {
-  constructor (private b?: string) {}
-
-  static badRequest (paramName: string): ResponseData {
-    return {
-      body: new MissingParamError(paramName),
-      statusCode: 400
-    }
-  }
-
-  static serverError (): ResponseData {
-    return {
-      body: new ServerError(),
-      statusCode: 500
-    }
-  }
-
-  static success (body: unknown): ResponseData {
-    return {
-      body: body,
-      statusCode: 201
-    }
-  }
-}
-
-class LoginRouter {
-  constructor (private b?: string) {}
-
-  route (httpContext: IHttpContext): ResponseData {
-    if (!httpContext || !httpContext.body) {
-      return HttpResponse.serverError()
-    }
-
-    const { email, password } = httpContext.body
-
-    if (!email) {
-      return HttpResponse.badRequest('email')
-    }
-
-    if (!password) {
-      return HttpResponse.badRequest('password')
-    }
-
-    return HttpResponse.success({})
-  }
-}
+import { LoginRouter, MissingParamError, ServerError } from './login-router'
 
 describe('Login Router', () => {
   it('should login router exist', () => {
@@ -100,7 +29,7 @@ describe('Login Router', () => {
   it('should route method return status code 500 if no httpContext was provided', () => {
     const sut = new LoginRouter()
     const httpContext = undefined
-    const httpResponse = sut.route(httpContext)
+    const httpResponse = sut.route(httpContext as any)
 
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
@@ -109,7 +38,7 @@ describe('Login Router', () => {
   it('should route method return status code 500 if no body was provided', () => {
     const sut = new LoginRouter()
     const httpContext = { body: null }
-    const httpResponse = sut.route(httpContext)
+    const httpResponse = sut.route(httpContext as any)
 
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
@@ -118,7 +47,7 @@ describe('Login Router', () => {
   it('should route method return a instance of ServerError if no httpContext was provided', () => {
     const sut = new LoginRouter()
     const httpContext = undefined
-    const httpResponse = sut.route(httpContext)
+    const httpResponse = sut.route(httpContext as any)
 
     expect(httpResponse.body).toEqual(new ServerError())
   })
