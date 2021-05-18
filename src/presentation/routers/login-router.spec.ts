@@ -28,7 +28,7 @@ class LoginRouter {
   constructor (private b?: string) {}
 
   route (httpContext: IHttpContext): IHttpResponse {
-    if (!httpContext) {
+    if (!httpContext || !httpContext.body) {
       return serverError(null)
     }
 
@@ -71,6 +71,14 @@ describe('Login Router', () => {
   it('should route method return status code 500 if no httpContext was provided', () => {
     const sut = new LoginRouter()
     const httpContext = undefined
+    const httpResponse = sut.route(httpContext)
+
+    expect(httpResponse.statusCode).toBe(500)
+  })
+
+  it('should route method return status code 500 if no body was provided', () => {
+    const sut = new LoginRouter()
+    const httpContext = { body: null }
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBe(500)
