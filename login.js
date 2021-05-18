@@ -17,13 +17,13 @@
 //   })
 // }
 
-const express = require('express')
-const router = express.Router()
+import { Router } from 'express'
+const router = Router()
 
-module.exports = () => {
-  const signUpRouter = new SignupRouter()
+export default () => {
+  const signUpController = new SignupController()
 
-  router.post('/', ExpressRouterAdapter.adapt(signUpRouter))
+  router.post('/', ExpressRouterAdapter.adapt(signUpController))
 }
 
 class ExpressRouterAdapter {
@@ -35,29 +35,33 @@ class ExpressRouterAdapter {
 
       const response = await signUpRouter.route(httpContext)
 
-      res.status(response.status).json(response.user)
+      res.status(response.status).json(response.body)
     }
   }
 }
 
-// Presentation layer
-// arquivo signup-router.js
-class SignupRouter {
+// Presentation/Controllers/Gateways layer
+// arquivo signup-controller.js
+export class SignupController {
   async route (httpContext) {
     const { email, password, repeatPassword } = httpContext.body
 
     const user = new SignupUseCase().signup(email, password, repeatPassword)
 
-    return { status: 201, user }
+    return { status: 201, body: user }
   }
 }
 
-// Domain layer
+// Use-Case (Iteractors) layer
 // arquivo signup-usecase
 class SignupUseCase {
+  constructor (addAccountRepo) {
+    this.addAccountRepo = addAccountRepo
+  }
+
   async signup (email, password, repeatPassword) {
     if (password === repeatPassword) {
-      const user = new AddAccountRepo().createAccount(email, password)
+      const user = new this.AddAccountRepo().createAccount(email, password)
 
       return user
     }
@@ -66,8 +70,8 @@ class SignupUseCase {
 
 // Infra layer
 // arquivo account-repository
-const mongoose = require('mongoose')
-const AccountModel = mongoose.model('Account')
+import { model } from 'mongoose'
+const AccountModel = model('Account')
 
 class AddAccountRepo {
   async createAccount (email, password) {
