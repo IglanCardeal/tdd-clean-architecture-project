@@ -68,12 +68,20 @@ describe('Login Router', () => {
     expect(sut.route(httpContext)).toBeDefined()
   })
 
-  it('should login router status code 500 if no httpContext was provided', () => {
+  it('should route method return status code 500 if no httpContext was provided', () => {
     const sut = new LoginRouter()
     const httpContext = undefined
     const httpResponse = sut.route(httpContext)
 
     expect(httpResponse.statusCode).toBe(500)
+  })
+
+  it('should route method return a empty body if no httpContext was provided', () => {
+    const sut = new LoginRouter()
+    const httpContext = undefined
+    const httpResponse = sut.route(httpContext)
+
+    expect(httpResponse.body).toBe(null)
   })
 
   it('should login router return an httpResponse', () => {
